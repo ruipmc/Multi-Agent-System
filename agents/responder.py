@@ -1,27 +1,16 @@
-import spade
-import re
-import asyncio
-from spade.agent import Agent
-from spade.behaviour import PeriodicBehaviour, CyclicBehaviour, FSMBehaviour, State
-from spade.message import Message
-from spade.template import Template
-import datetime
-import heapq
-import random
-from dijkstra import dijkstra
-from environment import *
-from colors import *
-from responder import *
-from route import *
-from queue import PriorityQueue  # Import necessário
-import time
+from plus.imports import *
 
 route_graph = {
-    "supply_base": [("shelter1", 10), ("shelter2", 15), ("affected_area1", 20)],
-    "shelter1": [("supply_base", 10), ("affected_area1", 5)],
-    "shelter2": [("supply_base", 15), ("affected_area1", 10)],
-    "affected_area1": [("supply_base", 20), ("shelter1", 5), ("shelter2", 10)]
+    "supply_base": [("shelter1", 10), ("shelter2", 15), ("affected_area1", 20), ("affected_area2", 25)],
+    "shelter1": [("affected_area1", 5), ("affected_area3", 10)],
+    "shelter2": [("affected_area2", 10), ("affected_area4", 10)],
+    "affected_area1": [("supply_base", 20), ("shelter1", 5), ("affected_area3", 15)],
+    "affected_area2": [("supply_base", 25), ("shelter2", 10), ("affected_area4", 20)],
+    "affected_area3": [("affected_area1", 15), ("affected_area5", 10)],
+    "affected_area4": [("affected_area2", 20), ("affected_area5", 10)],
+    "affected_area5": [("affected_area3", 10), ("affected_area4", 10)],
 }
+
 
 # Define an initial simulated time
 simulated_time_start = datetime.datetime.strptime(
@@ -35,6 +24,7 @@ class ResponderAgent(Agent):
         self.total_requests = 0  # Número total de pedidos esperados
         self.received_requests = 0  # Contador de pedidos recebidos
         self.active_requests = True
+        self.processing_times = []
 
     def get_priority_value(self, priority):
         valid_priorities = {
@@ -91,19 +81,19 @@ class ResponderAgent(Agent):
                 priority_value, timestamp, sender, request = self.agent.requests.get()
                 print(f"[ResponderAgent] Processing request: {request}")
 
-
                 if "shelter" in request.lower():
                     # Processar pedidos relacionados a shelter
                     num_civilians = int(request.split("with")[1].split("civilians")[0].strip())
-                    affected_area = "affected_area1"  # Supondo que o pedido veio desta área
-                    print(f"[ResponderAgent] Transporting {num_civilians} civilians from {affected_area}.")
+                    affected_areas = ["affected_area1", "affected_area2", "affected_area3", "affected_area4", "affected_area5"]
+                    affected_area = random.choice(affected_areas)           
+                    print(f"[ResponderAgent] Transporting {num_civilians} civilians from {affected_area}.\n")
                     
                     # Lógica para encontrar o melhor abrigo e transportar civis
                     best_shelter, route, cost = self.find_best_shelter(affected_area, num_civilians)
                     if best_shelter:
                         for location in route[1:]:
                             await asyncio.sleep(1)
-                            print(f"[ResponderAgent] Moving to {location}.")
+                            # print(f"[ResponderAgent] Moving to {location}.")
                         print("[ResponderAgent] Civilians delivered to shelter\n")
 
                         # Notifica o ShelterAgent da entrega
@@ -122,7 +112,7 @@ class ResponderAgent(Agent):
                     print(f"[ResponderAgent] Request forwarded to SupplyVehicleAgent: {request}")
 
             if not self.agent.active_requests and self.agent.requests.empty():
-                print("[ResponderAgent] All requests resolved. Notifying Environment.")
+                # print("[ResponderAgent] All requests resolved. Notifying Environment.")
                 stop_msg = Message(to="environment@localhost")
                 stop_msg.set_metadata("performative", "inform")
                 stop_msg.body = "All requests resolved"

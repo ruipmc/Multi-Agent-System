@@ -8,12 +8,12 @@ from spade.template import Template
 import datetime
 import heapq
 import random
-from dijkstra import dijkstra
-from colors import *
-from route import *
+from plus.dijkstra import dijkstra
+from plus.colors import *
+from plus.route import *
 from queue import PriorityQueue  # Import necessário
 import time
 import threading
 import os
-from shelter import *
-from environment import *
+from agents.shelter import *
+from agents.environment import *

@@ -1,4 +1,4 @@
-from imports import *
+from plus.imports import *
 
 
 class Environment(Agent):

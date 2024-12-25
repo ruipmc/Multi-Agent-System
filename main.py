@@ -1,6 +1,6 @@
-from imports import *
-from agents import *
-from responder import *
+from plus.imports import *
+from agents.agents import *
+from agents.responder import *
 
 async def main():
 
